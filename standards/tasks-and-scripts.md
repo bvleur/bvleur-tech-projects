@@ -3,6 +3,32 @@
 How a repository pins its tools and names its tasks, so every project is set up, checked and deployed the same way,
 locally and in CI. [mise](https://mise.jdx.dev) holds both the tools and the tasks.
 
+## Names say what a task changes
+
+A task name is predictable: its verb says what the task may change, its side effect. Whoever runs a task, a developer
+or an agent, knows from the verb alone whether it only reads, rewrites code, makes files, or changes something
+outside the machine, without reading the task. So tasks are split along their side effects: one task never mixes a
+read-only check with a rewrite, or a local build with a change on a server.
+
+From no side effect to the largest:
+
+| Verb | Side effect | Example |
+|---|---|---|
+| `check:*` | Reads the repository only. Changes no file; safe to run at any moment. | `check:lint`, `check:types` |
+| `test`, `test:*` | Runs tests. Changes no source file; writes at most reports and caches that git ignores. | `test:e2e` |
+| `dev`, `preview` | Runs a local server. Changes no source file. | `dev`, `preview` |
+| `setup`, `setup:*` | Installs what the repository needs on this machine (dependencies, browsers), ignored by git. | `setup:browsers` |
+| `build` | Writes build output (`dist/`), ignored by git. | `build` |
+| `gen:*` | Makes or overwrites generated files in the working copy, which may be committed. | `gen:song-index` |
+| `fetch:*` | Downloads from the network into the working copy. Changes nothing remote. | `fetch:samples` |
+| `fix`, `fix:*` | Rewrites source files in place: the repairing counterpart of a `check:*`. | `fix:format` |
+| `ci` | Everything CI checks, tests and builds. Never changes anything remote. | `ci` |
+| `deploy` | Changes the project's own production. Asks for confirmation. | `deploy` |
+| `prod:*` | Changes or acts on an external service, also one that is not the project's own production. Asks for confirmation. | `prod:<action>` |
+
+The verbs also say what is safe to run without asking: `check`, `test` and `ci` always are; `deploy` and `prod:*`
+never are. A task whose side effect does not fit its verb is renamed or split.
+
 ## Tools
 
 - Every dev tool the repository needs is pinned to an exact version in `[tools]` of `mise.toml`: runtimes, package
@@ -21,13 +47,11 @@ Which tools and versions a project uses is not part of this standard.
 ## Tasks
 
 - Tasks live only in mise, not in the package manager's scripts, also not in workspaces.
-- A task name starts with a verb from this list: `setup`, `dev`, `preview`, `build`, `gen`, `fetch`, `check:*`,
-  `fix:*`, `test`, `ci`, `deploy` and `prod:*`. A subject follows after a colon where needed
-  (`setup:browsers`, `gen:song-index`, `test:e2e`).
-- Work against an external service is `prod:*`, also when it is not the project's own production (a form service,
-  a mailing list). `deploy` and `prod:*` tasks ask with mise `confirm`, unless the tool itself already does a dry run
-  by default and asks to type YES; then `confirm` adds nothing.
-- Every task has a `description`. A task that only reads says so; a task that rewrites files says that too.
+- A task name is a verb from the table above, with a subject after a colon where needed (`verb:subject`).
+- `deploy` and `prod:*` tasks ask with mise `confirm`, unless the tool itself already does a dry run by default and
+  asks to type YES; then `confirm` adds nothing.
+- Every task has a `description` that names its side effect where the verb leaves room ("read-only",
+  "rewrites files", "needs a build").
 - Every flag gets a `usage` spec with `help`, and where possible `default` and `choices`.
 - A task with more than a few lines of logic becomes a file task in `mise-tasks/`.
 
