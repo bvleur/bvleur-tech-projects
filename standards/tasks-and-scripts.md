@@ -79,7 +79,8 @@ Which tools and versions a project uses is not part of this standard.
 
 ## Documentation
 
-- This convention lives only here. A project's README mentions at most `mise run setup` and `mise tasks`, and
-  perhaps `mise run test`.
+- This convention lives only here. A project links to this file from its `CLAUDE.md` and from a comment at the top
+  of its `mise.toml`, and does not copy the rules.
+- A project's README mentions at most `mise run setup` and `mise tasks`, and perhaps `mise run test`.
 - The README, docs, code comments, error messages and tests use the mise task names. ADRs and other historical
   documents stay as they were written.
