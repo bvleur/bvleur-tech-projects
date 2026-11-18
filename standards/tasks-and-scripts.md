@@ -15,7 +15,7 @@ From no side effect to the largest:
 | Verb | Side effect | Example |
 |---|---|---|
 | `check:*` | Reads the repository only. Changes no file; safe to run at any moment. | `check:lint`, `check:types` |
-| `test`, `test:*` | Runs tests. Changes no source file; writes at most reports and caches that git ignores. | `test:e2e` |
+| `test`, `test:*`, `test:full` | Runs tests. Changes no source file; writes at most reports and caches that git ignores. | `test:e2e` |
 | `dev`, `preview` | Runs a local server. Changes no source file. | `dev`, `preview` |
 | `setup`, `setup:*` | Installs what the repository needs on this machine (dependencies, test browsers), ignored by git. | `setup:browsers` |
 | `build`, `build:*` | Writes build output, ignored by git. | `build:web` |
@@ -43,9 +43,28 @@ Which tools and versions a project uses is not part of this standard.
 
 - Tasks live only in mise, never in a package manager's scripts.
 - A task name is a verb from the table above, with a subject after a colon where needed (`verb:subject`).
-- **Every part can run on its own, and the bare verb runs all parts.** `check` depends on every `check:*`, `fix` on
-  every `fix:*`, and `build` on every `build:*`: `build` makes all artefacts, `build:web`, `build:desktop` or
-  `build:ios` makes one. A new part is added to its umbrella in the same change.
+- **Every part can run on its own, and the bare verb runs a sensible default.** For `check`, `fix` and `build` the
+  default is every part: `check` depends on every `check:*`, `fix` on every `fix:*`, and `build` on every `build:*`
+  (`build` makes all artefacts, `build:web`, `build:desktop` or `build:ios` makes one). A new part is added to its
+  umbrella in the same change.
+- **When the default leaves parts out, the task says so, and `<verb>:full` runs them all.** Bare `test` runs the fast
+  tests that fit after every change; `test:full` runs every `test:*`. A bare task that does not run every part prints
+  a note when it finishes, so nobody takes it for the full set:
+
+  ```toml
+  [tasks.test]
+  description = "Run the default set of tests (the fast ones); test:full runs them all"
+  depends = ["test:unit"]
+  run = "echo 'ℹ️  Note that this task runs a default set of tests. For all tests, run test:full'"
+
+  [tasks."test:full"]
+  description = "Run every test suite"
+  depends = ["test:unit", "test:e2e"]
+  ```
+
+  `<verb>:full` names its parts one by one instead of `<verb>:*`, which would include itself. A new part is added to
+  it in the same change.
+
 - `deploy` and `prod:*` tasks ask with mise `confirm`, unless the tool itself already does a dry run by default and
   asks to type YES; then `confirm` adds nothing.
 - Every task has a `description` that names its side effect where the verb leaves room ("read-only",
