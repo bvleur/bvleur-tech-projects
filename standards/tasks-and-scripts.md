@@ -17,8 +17,8 @@ From no side effect to the largest:
 | `check:*` | Reads the repository only. Changes no file; safe to run at any moment. | `check:lint`, `check:types` |
 | `test`, `test:*` | Runs tests. Changes no source file; writes at most reports and caches that git ignores. | `test:e2e` |
 | `dev`, `preview` | Runs a local server. Changes no source file. | `dev`, `preview` |
-| `setup`, `setup:*` | Installs what the repository needs on this machine (dependencies, browsers), ignored by git. | `setup:browsers` |
-| `build` | Writes build output (`dist/`), ignored by git. | `build` |
+| `setup`, `setup:*` | Installs what the repository needs on this machine (dependencies, test browsers), ignored by git. | `setup:browsers` |
+| `build`, `build:*` | Writes build output, ignored by git. | `build:web` |
 | `gen:*` | Makes or overwrites generated files in the working copy, which may be committed. | `gen:song-index` |
 | `fetch:*` | Downloads from the network into the working copy. Changes nothing remote. | `fetch:samples` |
 | `fix`, `fix:*` | Rewrites source files in place: the repairing counterpart of a `check:*`. | `fix:format` |
@@ -34,20 +34,18 @@ never are. A task whose side effect does not fit its verb is renamed or split.
 - Every dev tool the repository needs is pinned to an exact version in `[tools]` of `mise.toml`: runtimes, package
   managers and command-line tools alike, also in a repository without a build. CI reads the same file, so local and
   CI always run the same versions.
-- `[env]` puts the project's locally installed binaries on the path, so a task calls them directly instead of through
-  the package manager. For a JavaScript project:
-
-  ```toml
-  [env]
-  _.path = ["{{config_root}}/node_modules/.bin"]
-  ```
+- `[env]` puts the project's locally installed command-line tools on the path, so a task calls them directly instead
+  of through a package manager.
 
 Which tools and versions a project uses is not part of this standard.
 
 ## Tasks
 
-- Tasks live only in mise, not in the package manager's scripts, also not in workspaces.
+- Tasks live only in mise, never in a package manager's scripts.
 - A task name is a verb from the table above, with a subject after a colon where needed (`verb:subject`).
+- **Every part can run on its own, and the bare verb runs all parts.** `check` depends on every `check:*`, `fix` on
+  every `fix:*`, and `build` on every `build:*`: `build` makes all artefacts, `build:web`, `build:desktop` or
+  `build:ios` makes one. A new part is added to its umbrella in the same change.
 - `deploy` and `prod:*` tasks ask with mise `confirm`, unless the tool itself already does a dry run by default and
   asks to type YES; then `confirm` adds nothing.
 - Every task has a `description` that names its side effect where the verb leaves room ("read-only",
@@ -59,23 +57,22 @@ Which tools and versions a project uses is not part of this standard.
 
 - **A path argument** needs `#MISE dir="{{cwd}}"` and `realpath`. Otherwise the path is relative to the repository
   root instead of where the command was typed.
-- **macOS has bash 3.2.** An empty array under `set -u` fails, so write `${a[@]+"${a[@]}"}`. `realpath` there has
-  no `-m`.
+- **A file task in bash runs on bash 3.2 on macOS.** An empty array under `set -u` fails, so write
+  `${a[@]+"${a[@]}"}`. `realpath` there has no `-m`.
 
 ## Checks
 
-- Every repository has `check:lint`, `check:format` and `check:types`. Bare `check` depends on every `check:*`,
-  and every `check:x` that a tool can repair has a `fix:x`; bare `fix` depends on every `fix:*`.
-- Which tool does the checking is up to the repository. A repository without JavaScript gets what fits, such as
-  `check:syntax`.
+- Every repository has `check:lint` and `check:format`, and `check:types` where the language has types. A
+  repository adds what else fits, such as `check:syntax` or `check:links`.
+- Every `check:x` that a tool can repair has a `fix:x`.
 - A deliberate exception to a lint rule gets a disable comment with the reason.
 - When a formatter is introduced, its big formatting change goes in a commit of its own. Check that the build
   output does not change.
 
 ## CI
 
-- Every action is pinned to a commit SHA with the version as a comment. mise is installed with `jdx/mise-action`.
-- The steps are `mise run setup`, `mise run setup:browsers` when browser tests run, and then `mise run ci`.
+- Every third-party step in CI is pinned to an exact version: a commit SHA, with the version as a comment.
+- The steps are `mise run setup`, any other `setup:*` the suites need, and then `mise run ci`.
 - A pull request runs `mise run ci`. `main` runs `mise run --yes deploy`, which depends on `ci` or `build`. A
   repository without a deploy runs `ci` on both.
 - `ci` is everything except a deploy. A few slow suites may be a job of their own.
