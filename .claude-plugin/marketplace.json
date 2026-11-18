@@ -1,0 +1,15 @@
+{
+  "name": "bvleur-tech-projects",
+  "owner": {
+    "name": "Bram van Leur"
+  },
+  "description": "Bram's standards for his tech projects, as skills for Claude.",
+  "plugins": [
+    {
+      "name": "bvleur-tech-projects",
+      "source": "./",
+      "description": "Bram's standards for his tech projects, as skills for Claude.",
+      "version": "0.1.0"
+    }
+  ]
+}

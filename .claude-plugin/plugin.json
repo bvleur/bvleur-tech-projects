@@ -1,0 +1,9 @@
+{
+  "name": "bvleur-tech-projects",
+  "version": "0.1.0",
+  "description": "Bram's standards for his tech projects, as skills for Claude.",
+  "author": {
+    "name": "Bram van Leur"
+  },
+  "skills": "./ai-skills/"
+}
