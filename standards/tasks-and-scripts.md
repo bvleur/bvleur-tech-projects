@@ -20,7 +20,7 @@ Which tools and versions a project uses is not part of this standard.
 
 ## Tasks
 
-- Tasks live only in mise, not in the package manager's scripts (no npm scripts, also not in workspaces).
+- Tasks live only in mise, not in the package manager's scripts, also not in workspaces.
 - A task name starts with a verb from this list: `setup`, `dev`, `preview`, `build`, `gen`, `fetch`, `check:*`,
   `fix:*`, `test`, `ci`, `deploy` and `prod:*`. A subject follows after a colon where needed
   (`setup:browsers`, `gen:song-index`, `test:e2e`).
